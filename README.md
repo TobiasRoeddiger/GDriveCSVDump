@@ -23,4 +23,6 @@ When running the application for the first time you will have to follow the inst
 
 ## Usage
 The server exposes an http post backend API.
+```
 curl -d "param1=value1&param2=value2" -X POST http://localhost:3000/sensor/
+```
