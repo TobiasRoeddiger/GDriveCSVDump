@@ -22,7 +22,13 @@ npm start
 When running the application for the first time you will have to follow the instructions shown in the command line. Follow the link and enter the access key. This will generate an access token file automatically for the defined scope of this application.
 
 ## Usage
-The server exposes an http post backend API.
+The server exposes an http post backend API and accepts form url encoded content.
+
 ```
-curl -d "param1=value1&param2=value2" -X POST http://localhost:3000/sensor/
+curl -d "sensor=temperature1&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:3000/event/
 ```
+
+## Arduino Usage Example
+
+## Feature List
+- Generate Dynamic Pages from Sensors (e.g. overview of all sensors and also data visualization)
