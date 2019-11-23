@@ -62,3 +62,4 @@ typings/
 
 # gdrive security files
 credentials.json
+token.json
