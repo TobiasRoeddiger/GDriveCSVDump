@@ -10,7 +10,7 @@ Clone this repository. Make sure you have node.js and npm installed. Navigate to
 npm install
 ```
 
-Before you can run the application you will have to obtain a token from google drive by following the steps behind [this link](https://developers.google.com/drive/api/v3/enable-drive-api). After creating an app, genereate OAuth Client ID credentials and download the credentials file. Rename the file to credentials.json.
+Before you can run the application you will have to obtain a token from google drive by following the steps behind [this link](https://developers.google.com/drive/api/v3/enable-drive-api). After creating an app, genereate OAuth Client ID credentials and download the credentials file. Rename the file to credentials.json and copy it to the root folder of this project.
 
 
 ## Running 
