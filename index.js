@@ -1,17 +1,19 @@
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
-const async = require('async');
+const express = require('express');
+const bodyParser = require('body-parser');
+const port = 4000;
+const server = express();
 
-// If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
-
-// The file token.json stores the user's access and refresh tokens, and is
-// created automatically when the authorization flow completes for the first
-// time.
 const TOKEN_PATH = 'token.json';
+const ROOT_FOLDER = 'SENSOR_DATA'
 
 var drive;
+var sensorFolderId;
+
+var lastAPIRequestDictionary = {}
 
 // Load client secrets from a local file.
 fs.readFile('credentials.json', (err, content) => {
@@ -70,69 +72,165 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-function folderExists(name)
+function retrieveFolder(name, parent, resultCallback)
 {
-  var pageToken = null;
-  // Using the NPM module 'async'
-  async.doWhilst(function (callback) {
-    drive.files.list({
-      q: "mimeType='application/vnd.google-apps.folder'",
-      fields: 'nextPageToken, files(id, name)',
-      spaces: 'drive',
-      pageToken: pageToken
-    }, function (err, res) {
-      if (err) {
-        // Handle error
-        console.error(err);
-        callback(err)
-      } else {
-        if (res.data.files !== undefined)
+  var fileFound = false;
+  drive.files.list({
+    q: "mimeType='application/vnd.google-apps.folder'",
+    fields: 'files(id, name)',
+    spaces: 'drive',
+    parents: [parent]
+  }, function (err, res) {
+    if (res.data.files !== undefined)
+    {
+      res.data.files.forEach(function (file) {
+        if (file.name === name && !fileFound)
         {
-          res.data.files.forEach(function (file) {
-            if (file.name === name)
-            {
-              console.log(file);
-            }
-          });
+          fileFound = true;
+          resultCallback(file.id);
         }
-        pageToken = res.nextPageToken;
-        callback();
-      }
-    });
-  }, function () {
-    return !!pageToken;
-  }, function (err) {
-    if (err) {
-      // Handle error
-      console.error(err);
-    } else {
-      return 
+      });
     }
-  })
+    
+    if (!fileFound)
+    {
+      resultCallback(null);
+    }
+  });
 }
 
-function createRootFolder()
+function createFolder(name, parent, resultCallback)
 {
-  if (!drive) return;
-
   var fileMetadata = {
-    'name': 'photo.jpg'
-  };
-  var media = {
-    mimeType: 'image/jpeg',
-    body: fs.createReadStream('files/image.jpg')
+    'name': name,
+    'mimeType': 'application/vnd.google-apps.folder',
+    parents: [parent]
   };
   drive.files.create({
     resource: fileMetadata,
-    media: media,
     fields: 'id'
-  }, function (err, file) {
+  }, function (err, res) {
     if (err) {
       // Handle error
       console.error(err);
     } else {
-      console.log('File Id: ', file.id);
+      resultCallback(res.data.id);
     }
+  });
+}
+
+function processSensorEvent(sensorId, timestamp, value, unit)
+{
+  if (!sensorFolderId) return;
+
+  var dayFolderIdentifier = new Date(timestamp).toDateString();
+
+  retrieveFolder(dayFolderIdentifier, sensorFolderId, function(folderId) {
+    if (!folderId)
+    {
+      createFolder(dayFolderIdentifier, sensorFolderId, function(folderId)
+      {
+        storeSensorValue(folderId, sensorId, timestamp, value, unit);
+      });
+    }
+    else
+    {
+      storeSensorValue(folderId, sensorId, timestamp, value, unit);
+    }
+  });
+}
+
+function storeSensorValue(folderId, sensorId, timestamp, value, unit)
+{
+  var fileId;
+  drive.files.list({
+    q: "mimeType='text/csv' and '" + folderId + "' in parents",
+    fields: 'files(id, name)',
+    parents: [folderId]
+  }, function(err, res) {
+    res.data.files.forEach(function (file) {
+
+      if (file.name === (sensorId + "_" + unit + ".csv"))
+      {
+        // assumes that file can only be found once
+        fileId = file.id;
+        appendToFile(folderId, fileId, timestamp, value, sensorId);
+      }
+    });
+
+    if (!fileId)
+    {
+      var fileMetadata = {
+        'name': sensorId + "_" + unit + ".csv",
+        'mimeType': 'text/csv',
+        parents: [folderId]
+      };
+      drive.files.create({
+        resource: fileMetadata,
+        fields: 'id'
+      }, function (err, res) {
+        if (err) {
+          // Handle error
+          console.error(err);
+        } else {
+
+          appendToFile(folderId, res.data.id, timestamp, value, sensorId)
+        }
+      });
+    }
+  });
+}
+
+  
+
+function appendToFile(folderId, fileId, timestamp, value, sensorId)
+{
+  // check if temp path exists - create otherwise
+  if (!fs.existsSync("./tmp/"))
+  {
+    fs.mkdirSync("./tmp/");
+  }
+
+  var randomTempFile = "./tmp/temp_" + Math.floor((Math.random() * 10000000000000)) + ".csv";
+
+  var temporaryFile = fs.createWriteStream(randomTempFile);
+  drive.files.get({
+    fileId: fileId,
+    parents: [folderId],
+    alt: 'media'
+  }, {
+    responseType: 'stream'
+  }, function(err, response){
+    if(err)return done(err);
+    
+    response.data.on('error', err => {
+        done(err);
+    }).on('end', ()=>{
+      fs.appendFile(randomTempFile, "\n" + timestamp + ", " + value, function (err) {
+        if (err) {
+          //console.error("failed to store sensor value: " + new Date(timestamp).toISOString() + " - " + sensorId + " - " + value)
+        }
+        else
+        {
+          var media = {
+            mimeType: 'text/csv',
+            body: fs.createReadStream(randomTempFile)
+          };
+        
+          drive.files.update({
+            fileId: fileId,
+            media: media
+          }, (err, res) => {
+            if (err) {
+              // Handle error
+            } else {
+              //console.log("stored sensor value: " + new Date(timestamp).toISOString() + " - " + sensorId + " - " + value)
+            }
+          });
+        }
+      });
+    })
+    .pipe(temporaryFile);
   });
 }
 
@@ -142,12 +240,48 @@ function createRootFolder()
  */
 function main(auth) {
   drive = google.drive({version: 'v3', auth});
-  if(!folderExists('Sensor Data'))
-  {
-    createRootFolder();
-  }
+  retrieveFolder(ROOT_FOLDER, null, function(folderId) { 
+    if (!folderId)
+    {
+      createFolder(ROOT_FOLDER, null, function(folderId)
+      {
+        sensorFolderId = folderId
+        startServer();
+      });
+    }
+    else
+    {
+      sensorFolderId = folderId;
+      startServer();
+    }
+  });
 }
-// [END drive_quickstart]
+
+function startServer()
+{
+  server.use(bodyParser.urlencoded({ extended: false }))
+
+  server.get('/', function(req, res) {
+    res.send("Server is up and running.")
+  });
+
+  server.post('/event/', function (req, res) {
+    if (lastAPIRequestDictionary[req.body.sensorId] && (Date.now() - lastAPIRequestDictionary[req.body.sensorId]) / 1000 < 15) {
+      res.status(409).send({ error: 'Can only call the API every 15 seconds for each sensor id (called ' + req.body.sensorId + " after " + (Date.now() - lastAPIRequestDictionary[req.body.sensorId]) / 1000 + " seconds)." });
+    }
+    else
+    {
+      lastAPIRequestDictionary[req.body.sensorId] = new Date();
+      processSensorEvent(req.body.sensorId, parseInt(req.body.timestamp), req.body.value, req.body.unit);
+      res.send();
+    }
+  });
+
+  server.listen(port, () => {
+    console.log(`server listening at ${port}`);
+  });
+}
+
 
 module.exports = {
   SCOPES,

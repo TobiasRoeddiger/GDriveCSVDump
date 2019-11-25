@@ -63,3 +63,6 @@ typings/
 # gdrive security files
 credentials.json
 token.json
+
+# temporary files of the server
+tmp/
