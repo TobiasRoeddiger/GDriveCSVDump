@@ -221,6 +221,9 @@ function appendToFile(folderId, fileId, timestamp, value, sensorId)
             fileId: fileId,
             media: media
           }, (err, res) => {
+            fs.unlink(randomTempFile, function() {
+              
+            });
             if (err) {
               // Handle error
             } else {
