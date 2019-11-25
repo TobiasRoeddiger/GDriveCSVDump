@@ -25,7 +25,7 @@ When running the application for the first time you will have to follow the inst
 The server exposes an http post backend API and accepts form url encoded content.
 
 ```
-curl -d "sensor=temperature1&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:3000/event/
+curl -d "sensorId=DS18B20LivingRoom&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:4000/event/
 ```
 **Important: Google's courtesy limit of the drive API is 1'000'000 calls per day and 1'000 requests per 100 seconds. Keep this in mind when pushing data to the server.**
 
