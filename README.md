@@ -27,7 +27,7 @@ The server exposes an http post backend API and accepts form url encoded content
 ```
 curl -d "sensorId=DS18B20LivingRoom&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:4000/event/
 ```
-**Important: Google's courtesy limit of the drive API is at 1'000'000 calls per day and 1'000 requests per 100 seconds. Keep this in mind when pushing data to the server. To ensure no file syncing issues happen when replacing the CSV file internally there is an artifical request limiter of 15 seconds in place for every sensor id. Requesting the API more than every 15 seconds for a certain sensor Id will result in an http 409.**
+**Important: Google's courtesy limit of the drive API is at 1'000'000 calls per day and 1'000 requests per 100 seconds. Keep this in mind when pushing data to the server. To ensure no file syncing issues happen when replacing the CSV file internally there is an artifical request limiter of 15 seconds in place for every sensor id. Requesting the API more than every 15 seconds for a certain sensor id will result in an http 409.**
 
 ## Arduino Usage Example
 As you might want to use this in an embedded scenario, here is an **untested** example code for Arduino (ESP32). The timestamp is currently not obtained and hardcoded inside the POST request as you might tell from the code below.
