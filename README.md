@@ -10,7 +10,7 @@ Clone this repository. Make sure you have node.js and npm installed. Navigate to
 npm install
 ```
 
-Before you can run the application you will have to obtain a token from google drive by following the steps behind [this link](https://developers.google.com/drive/api/v3/enable-drive-api). Click on the button "Enable the Drive API" and follow the instructions. Finally, download "credentials.json" by clicking on "Download Client Configuration" and copy it to the root folder of this project.
+Before you can run the application you will have to obtain a token from google drive by following the steps behind [this link](https://developers.google.com/drive/api/v3/enable-drive-api). After creating an app, genereate OAuth Client ID credentials and download the credentials file. Rename the file to credentials.json and copy it to the root folder of this project.
 
 
 ## Running 
@@ -25,7 +25,7 @@ When running the application for the first time you will have to follow the inst
 The server exposes an http post backend API and accepts form url encoded content.
 
 ```
-curl -d "sensor=temperature1&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:3000/event/
+curl -d "sensorId=DS18B20LivingRoom&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:4000/event/
 ```
 **Important: Google's courtesy limit of the drive API is 1'000'000 calls per day and 1'000 requests per 100 seconds. Keep this in mind when pushing data to the server.**
 
