@@ -33,3 +33,7 @@ curl -d "sensor=temperature1&timestamp=1574517436139&value=23.4&unit=Celsius" -X
 
 ## Feature List
 - Generate Dynamic Pages from Sensors (e.g. overview of all sensors and also data visualization)
+
+## Error Handling
+**Error loading client secret file: [Error: ENOENT: no such file or directory, open '...\credentials.json']**
+Please make sure to follow the steps under "Installation" to add a credentials.json to the projects root.
