@@ -27,8 +27,13 @@ The server exposes an http post backend API and accepts form url encoded content
 ```
 curl -d "sensor=temperature1&timestamp=1574517436139&value=23.4&unit=Celsius" -X POST http://localhost:3000/event/
 ```
+**Important: Google's courtesy limit of the drive API is 1'000'000 calls per day and 1'000 requests per 100 seconds. Keep this in mind when pushing data to the server.**
 
 ## Arduino Usage Example
 
 ## Feature List
 - Generate Dynamic Pages from Sensors (e.g. overview of all sensors and also data visualization)
+
+## Error Handling
+**Error loading client secret file: [Error: ENOENT: no such file or directory, open '...\credentials.json']**
+Please make sure to follow the steps under "Installation" to add a credentials.json to the projects root.
