@@ -56,7 +56,7 @@ void loop() {
   if(WiFi.status()== WL_CONNECTED){   //Check WiFi connection status
     HTTPClient http;   
  
-    http.begin("http://your_servers_ip:4000");  //Specify destination for HTTP request
+    http.begin("http://your_servers_ip:4000/event");  //Specify destination for HTTP request
     http.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Specify content-type header
  
     // TODO: obtain timestamp
